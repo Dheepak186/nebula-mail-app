@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AssistantPanel from "@/components/AssistantPanel";
 
@@ -12,12 +12,16 @@ type Email = {
   snippet: string;
 };
 
+const WATCH_STORAGE_KEY = "nebula-gmail-watch-started";
+
 export default function MailPage() {
   const router = useRouter();
 
   const [emails, setEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const inboxRequestInProgress = useRef(false);
 
   // Filter fields
   const [search, setSearch] = useState("");
@@ -31,11 +35,20 @@ export default function MailPage() {
   // ---------------------------------------------
 
   async function loadInbox() {
+    // Prevent duplicate Gmail requests at the same time.
+    if (inboxRequestInProgress.current) {
+      return;
+    }
+
+    inboxRequestInProgress.current = true;
+
     try {
       setLoading(true);
       setError("");
 
-      const response = await fetch("/api/gmail/inbox");
+      const response = await fetch("/api/gmail/inbox", {
+        cache: "no-store",
+      });
 
       if (!response.ok) {
         throw new Error("Failed to load inbox");
@@ -43,12 +56,15 @@ export default function MailPage() {
 
       const data = await response.json();
 
-      setEmails(data.messages || []);
+      // IMPORTANT:
+      // /api/gmail/inbox returns { emails: [...] }
+      setEmails(data.emails || []);
     } catch (error) {
       console.error(error);
       setError("Failed to load emails");
     } finally {
       setLoading(false);
+      inboxRequestInProgress.current = false;
     }
   }
 
@@ -79,7 +95,7 @@ export default function MailPage() {
 
     // From date
     // Gmail "after" is exclusive.
-    // We subtract one day so the selected date is included.
+    // Subtract one day so selected date is included.
     if (fromDate) {
       const date = new Date(`${fromDate}T00:00:00`);
 
@@ -95,7 +111,7 @@ export default function MailPage() {
 
     // To date
     // Gmail "before" is exclusive.
-    // We add one day so the selected date is included.
+    // Add one day so selected date is included.
     if (toDate) {
       const date = new Date(`${toDate}T00:00:00`);
 
@@ -138,7 +154,10 @@ export default function MailPage() {
       setError("");
 
       const response = await fetch(
-        `/api/gmail/search?q=${encodeURIComponent(query)}`
+        `/api/gmail/search?q=${encodeURIComponent(query)}`,
+        {
+          cache: "no-store",
+        }
       );
 
       if (!response.ok) {
@@ -146,6 +165,7 @@ export default function MailPage() {
       }
 
       const data = await response.json();
+
       setEmails(data.emails || []);
     } catch (error) {
       console.error(error);
@@ -166,10 +186,12 @@ export default function MailPage() {
 
     async function startRealtimeSync() {
       try {
-        // Remember the current version so old notifications do not
-        // immediately refresh the page when we first start.
+        // Get current sync version.
         const statusResponse = await fetch(
-          "/api/gmail/sync-status"
+          "/api/gmail/sync-status",
+          {
+            cache: "no-store",
+          }
         );
 
         if (statusResponse.ok) {
@@ -177,57 +199,146 @@ export default function MailPage() {
           lastVersion = status.version || 0;
         }
 
-        // Start/renew Gmail's push watch.
-        const watchResponse = await fetch(
-          "/api/gmail/watch"
-        );
+        // -----------------------------------------
+        // START GMAIL WATCH ONLY WHEN NEEDED
+        // -----------------------------------------
 
-        if (!watchResponse.ok) {
-          console.error("Failed to start Gmail watch");
+        const storedWatchTime =
+          localStorage.getItem(WATCH_STORAGE_KEY);
+
+        const lastWatchTime = storedWatchTime
+          ? Number(storedWatchTime)
+          : 0;
+
+        const twentyFourHours =
+          24 * 60 * 60 * 1000;
+
+        const watchIsRecent =
+          lastWatchTime > 0 &&
+          Date.now() - lastWatchTime <
+            twentyFourHours;
+
+        if (!watchIsRecent) {
+          try {
+            const watchResponse = await fetch(
+              "/api/gmail/watch",
+              {
+                cache: "no-store",
+              }
+            );
+
+            if (watchResponse.ok) {
+              localStorage.setItem(
+                WATCH_STORAGE_KEY,
+                String(Date.now())
+              );
+
+              console.log(
+                "Gmail push watch started successfully."
+              );
+            } else {
+              console.error(
+                "Gmail watch could not be started."
+              );
+            }
+          } catch (error) {
+            console.error(
+              "Gmail watch request failed:",
+              error
+            );
+          }
         }
 
-        // Check the tiny sync-status endpoint frequently. The actual
-        // Gmail change is delivered to our backend through Pub/Sub.
+        // -----------------------------------------
+        // CHECK OUR SYNC STATUS
+        // -----------------------------------------
+        //
+        // This does NOT call Gmail.
+        // It only checks our small backend endpoint.
+        //
+
         statusInterval = setInterval(async () => {
           try {
             const response = await fetch(
               "/api/gmail/sync-status",
-              { cache: "no-store" }
+              {
+                cache: "no-store",
+              }
             );
 
-            if (!response.ok) return;
+            if (!response.ok) {
+              return;
+            }
 
             const status = await response.json();
-            const currentVersion = status.version || 0;
+
+            const currentVersion =
+              status.version || 0;
 
             if (currentVersion > lastVersion) {
               lastVersion = currentVersion;
+
               await refreshMailView();
             }
           } catch (error) {
-            console.error("Realtime sync check failed:", error);
+            console.error(
+              "Realtime sync check failed:",
+              error
+            );
           }
-        }, 3000);
+        }, 5000);
 
-        // Gmail watches expire, so renew the watch once every 24 hours
-        // while the mail page is open.
-        watchInterval = setInterval(async () => {
-          try {
-            await fetch("/api/gmail/watch");
-          } catch (error) {
-            console.error("Gmail watch renewal failed:", error);
-          }
-        }, 24 * 60 * 60 * 1000);
+        // -----------------------------------------
+        // RENEW WATCH ONCE EVERY 24 HOURS
+        // -----------------------------------------
+
+        watchInterval = setInterval(
+          async () => {
+            try {
+              const response = await fetch(
+                "/api/gmail/watch",
+                {
+                  cache: "no-store",
+                }
+              );
+
+              if (response.ok) {
+                localStorage.setItem(
+                  WATCH_STORAGE_KEY,
+                  String(Date.now())
+                );
+
+                console.log(
+                  "Gmail push watch renewed."
+                );
+              }
+            } catch (error) {
+              console.error(
+                "Gmail watch renewal failed:",
+                error
+              );
+            }
+          },
+          24 * 60 * 60 * 1000
+        );
       } catch (error) {
-        console.error("Failed to start realtime sync:", error);
+        console.error(
+          "Failed to start realtime sync:",
+          error
+        );
       }
     }
 
     startRealtimeSync();
 
     return () => {
-      if (statusInterval) clearInterval(statusInterval);
-      if (watchInterval) clearInterval(watchInterval);
+      if (statusInterval) {
+        clearInterval(statusInterval);
+      }
+
+      if (watchInterval) {
+        clearInterval(watchInterval);
+      }
     };
   }, []);
 
@@ -239,7 +350,7 @@ export default function MailPage() {
     const query = buildFilterQuery();
 
     if (!query) {
-      loadInbox();
+      await loadInbox();
       return;
     }
 
@@ -248,7 +359,10 @@ export default function MailPage() {
       setError("");
 
       const response = await fetch(
-        `/api/gmail/search?q=${encodeURIComponent(query)}`
+        `/api/gmail/search?q=${encodeURIComponent(query)}`,
+        {
+          cache: "no-store",
+        }
       );
 
       if (!response.ok) {
@@ -270,13 +384,18 @@ export default function MailPage() {
   // AI SEARCH
   // ---------------------------------------------
 
-  async function handleAssistantSearch(query: string) {
+  async function handleAssistantSearch(
+    query: string
+  ) {
     try {
       setLoading(true);
       setError("");
 
       const response = await fetch(
-        `/api/gmail/search?q=${encodeURIComponent(query)}`
+        `/api/gmail/search?q=${encodeURIComponent(query)}`,
+        {
+          cache: "no-store",
+        }
       );
 
       if (!response.ok) {
@@ -368,21 +487,27 @@ export default function MailPage() {
         </h1>
 
         <button
-          onClick={() => router.push("/mail/compose")}
+          onClick={() =>
+            router.push("/mail/compose")
+          }
           className="w-full bg-blue-600 text-white py-5 rounded-xl text-xl font-bold hover:bg-blue-700 mb-10"
         >
           Compose
         </button>
 
         <button
-          onClick={() => router.push("/mail")}
+          onClick={() =>
+            router.push("/mail")
+          }
           className="w-full text-left px-5 py-4 rounded-xl bg-gray-100 text-xl font-semibold mb-3"
         >
           Inbox
         </button>
 
         <button
-          onClick={() => router.push("/mail/sent")}
+          onClick={() =>
+            router.push("/mail/sent")
+          }
           className="w-full text-left px-5 py-4 rounded-xl text-xl font-semibold hover:bg-gray-100"
         >
           Sent
@@ -623,8 +748,11 @@ export default function MailPage() {
             ))}
 
           </div>
+
         )}
+
       </main>
+
       {/* =========================================
           AI ASSISTANT
       ========================================= */}

@@ -35,6 +35,12 @@ export async function GET() {
       auth: oauth2Client,
     });
 
+    // Do not automatically retry a quota error.
+    // Retrying immediately can make the quota problem worse.
+    google.options({
+      retry: false,
+    });
+
     const response = await gmail.users.watch({
       userId: "me",
       requestBody: {
@@ -49,14 +55,19 @@ export async function GET() {
       historyId: response.data.historyId,
       expiration: response.data.expiration,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gmail watch error:", error);
+
+    const status = error?.code === 403 ? 429 : 500;
 
     return Response.json(
       {
-        error: "Failed to start Gmail watch",
+        error:
+          status === 429
+            ? "Gmail quota temporarily exceeded. Please try again later."
+            : "Failed to start Gmail watch",
       },
-      { status: 500 }
+      { status }
     );
   }
 }

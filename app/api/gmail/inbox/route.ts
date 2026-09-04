@@ -24,40 +24,46 @@ export async function GET() {
       auth,
     });
 
+    // Get only the latest 10 inbox messages.
     const response = await gmail.users.messages.list({
       userId: "me",
       labelIds: ["INBOX"],
-      maxResults: 20,
+      maxResults: 10,
     });
 
     const messages = response.data.messages || [];
 
-    const emails = await Promise.all(
-      messages.map(async (message) => {
-        const details = await gmail.users.messages.get({
-          userId: "me",
-          id: message.id!,
-          format: "metadata",
-          metadataHeaders: ["From", "Subject", "Date"],
-        });
+    const emails = [];
 
-        const headers = details.data.payload?.headers || [];
+    // Fetch message details one at a time.
+    // This is intentionally limited to 10 messages
+    // to reduce Gmail API usage.
+    for (const message of messages) {
+      if (!message.id) continue;
 
-        const getHeader = (name: string) =>
-          headers.find(
-            (header) =>
-              header.name?.toLowerCase() === name.toLowerCase()
-          )?.value || "";
+      const details = await gmail.users.messages.get({
+        userId: "me",
+        id: message.id,
+        format: "metadata",
+        metadataHeaders: ["From", "Subject", "Date"],
+      });
 
-        return {
-          id: message.id,
-          from: getHeader("From"),
-          subject: getHeader("Subject"),
-          date: getHeader("Date"),
-          snippet: details.data.snippet || "",
-        };
-      })
-    );
+      const headers = details.data.payload?.headers || [];
+
+      const getHeader = (name: string) =>
+        headers.find(
+          (header) =>
+            header.name?.toLowerCase() === name.toLowerCase()
+        )?.value || "";
+
+      emails.push({
+        id: message.id,
+        from: getHeader("From"),
+        subject: getHeader("Subject"),
+        date: getHeader("Date"),
+        snippet: details.data.snippet || "",
+      });
+    }
 
     return Response.json({ emails });
   } catch (error) {
