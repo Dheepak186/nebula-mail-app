@@ -6,6 +6,7 @@ import AssistantPanel from "@/components/AssistantPanel";
 
 type Email = {
   id: string;
+  threadId?: string;
   from: string;
   to: string;
   subject: string;
@@ -21,30 +22,70 @@ export default function EmailDetailPage() {
   const id = String(params.id);
 
   const [email, setEmail] = useState<Email | null>(null);
+  const [threadMessages, setThreadMessages] = useState<Email[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   // --------------------------------------------------
-  // LOAD EMAIL
+  // LOAD EMAIL + THREAD
   // --------------------------------------------------
 
   useEffect(() => {
-    async function loadEmail() {
+    async function loadEmailAndThread() {
       try {
         setLoading(true);
         setError("");
 
-        const response = await fetch(
+        // First load the selected message.
+        const messageResponse = await fetch(
           `/api/gmail/message/${id}`
         );
 
-        if (!response.ok) {
+        if (!messageResponse.ok) {
           throw new Error("Failed to load email");
         }
 
-        const data = await response.json();
+        const messageData = await messageResponse.json();
 
-        setEmail(data);
+        const currentEmail: Email = {
+          id: messageData.id || id,
+          threadId: messageData.threadId,
+          from: messageData.from || "",
+          to: messageData.to || "",
+          subject: messageData.subject || "",
+          date: messageData.date || "",
+          body:
+            messageData.body ||
+            messageData.snippet ||
+            "",
+          snippet: messageData.snippet || "",
+        };
+
+        setEmail(currentEmail);
+
+        // ------------------------------------------------
+        // Load the complete Gmail thread.
+        // ------------------------------------------------
+
+        if (messageData.threadId) {
+          const threadResponse = await fetch(
+            `/api/gmail/thread/${messageData.threadId}`
+          );
+
+          if (!threadResponse.ok) {
+            throw new Error("Failed to load email thread");
+          }
+
+          const threadData = await threadResponse.json();
+
+          const messages: Email[] =
+            threadData.messages || [];
+
+          setThreadMessages(messages);
+        } else {
+          // Fallback if no thread ID is available.
+          setThreadMessages([currentEmail]);
+        }
       } catch (error) {
         console.error(error);
         setError("Failed to load email");
@@ -54,7 +95,7 @@ export default function EmailDetailPage() {
     }
 
     if (id) {
-      loadEmail();
+      loadEmailAndThread();
     }
   }, [id]);
 
@@ -75,16 +116,13 @@ export default function EmailDetailPage() {
 
     // ------------------------------------------------
     // FORWARD FIX
-    // Always use the real currently opened email
-    // for the forwarded subject and body.
+    // Always use the real currently opened email.
     // ------------------------------------------------
 
     const isForward =
       subject.trim().toLowerCase().startsWith("fwd:");
 
     if (isForward && email) {
-      // Use the current email recipient if AI did not
-      // provide a valid recipient.
       if (
         !to.trim() ||
         to.toLowerCase().includes("example.com")
@@ -92,12 +130,10 @@ export default function EmailDetailPage() {
         to = email.to || "";
       }
 
-      // Always use the actual current email subject.
       subject = `Fwd: ${
         email.subject || "(No subject)"
       }`;
 
-      // Always use the actual current email body.
       body =
         email.body ||
         email.snippet ||
@@ -105,7 +141,7 @@ export default function EmailDetailPage() {
     }
 
     // ------------------------------------------------
-    // Add values to compose URL
+    // Add values to compose URL.
     // ------------------------------------------------
 
     if (to.trim()) {
@@ -157,7 +193,7 @@ export default function EmailDetailPage() {
     <div className="h-screen flex bg-gray-100">
 
       {/* =========================================
-          MAIN EMAIL
+          MAIN EMAIL / THREAD
       ========================================= */}
 
       <main className="flex-1 overflow-y-auto p-10">
@@ -181,25 +217,17 @@ export default function EmailDetailPage() {
 
             <div className="bg-white rounded-2xl p-8">
               <p className="text-gray-500 text-lg">
-                Loading email...
+                Loading email thread...
               </p>
             </div>
 
           ) : error ? (
-
-            /* ===================================
-               ERROR
-            =================================== */
 
             <div className="bg-red-100 text-red-700 rounded-xl p-5">
               {error}
             </div>
 
           ) : !email ? (
-
-            /* ===================================
-               EMAIL NOT FOUND
-            =================================== */
 
             <div className="bg-white rounded-2xl p-8">
               <p className="text-gray-500">
@@ -209,58 +237,102 @@ export default function EmailDetailPage() {
 
           ) : (
 
-            /* ===================================
-               EMAIL CONTENT
-            =================================== */
+            <div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-10 shadow-sm">
+              {/* =================================
+                  THREAD HEADER
+              ================================= */}
 
-              {/* SUBJECT */}
+              <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm mb-6">
 
-              <h1 className="text-3xl font-bold mb-8">
-                {email.subject || "(No subject)"}
-              </h1>
+                <h1 className="text-3xl font-bold">
+                  {email.subject || "(No subject)"}
+                </h1>
 
-              {/* EMAIL INFORMATION */}
-
-              <div className="space-y-3 mb-8">
-
-                <p className="text-lg">
-                  <strong>From:</strong>{" "}
-                  {email.from}
-                </p>
-
-                <p className="text-lg">
-                  <strong>To:</strong>{" "}
-                  {email.to}
-                </p>
-
-                <p className="text-lg">
-                  <strong>Date:</strong>{" "}
-                  {email.date}
+                <p className="text-gray-500 mt-2">
+                  {threadMessages.length}{" "}
+                  {threadMessages.length === 1
+                    ? "message"
+                    : "messages"}{" "}
+                  in this conversation
                 </p>
 
               </div>
 
-              <hr className="border-gray-300 mb-8" />
+              {/* =================================
+                  THREAD MESSAGES
+              ================================= */}
 
-              {/* MESSAGE */}
+              <div className="space-y-6">
 
-              <div>
+                {threadMessages.map(
+                  (message, index) => (
 
-                <h2 className="text-xl font-bold mb-4">
-                  Message
-                </h2>
+                    <div
+                      key={
+                        message.id ||
+                        `${message.date}-${index}`
+                      }
+                      className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm"
+                    >
 
-                <div className="text-lg text-gray-800 whitespace-pre-wrap leading-8">
-                  {email.body ||
-                    email.snippet ||
-                    "(No message)"}
-                </div>
+                      {/* MESSAGE HEADER */}
+
+                      <div className="mb-6">
+
+                        <h2 className="text-xl font-bold mb-4">
+                          {message.subject ||
+                            "(No subject)"}
+                        </h2>
+
+                        <div className="space-y-2 text-gray-700">
+
+                          <p>
+                            <strong>From:</strong>{" "}
+                            {message.from}
+                          </p>
+
+                          <p>
+                            <strong>To:</strong>{" "}
+                            {message.to}
+                          </p>
+
+                          <p>
+                            <strong>Date:</strong>{" "}
+                            {message.date}
+                          </p>
+
+                        </div>
+
+                      </div>
+
+                      <hr className="border-gray-300 mb-6" />
+
+                      {/* MESSAGE BODY */}
+
+                      <div>
+
+                        <h3 className="text-lg font-bold mb-4">
+                          Message
+                        </h3>
+
+                        <div className="text-lg text-gray-800 whitespace-pre-wrap leading-8">
+                          {message.body ||
+                            message.snippet ||
+                            "(No message)"}
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                  )
+                )}
 
               </div>
 
             </div>
+
           )}
 
         </div>
