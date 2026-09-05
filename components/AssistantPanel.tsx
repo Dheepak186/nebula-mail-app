@@ -162,10 +162,37 @@ export default function AssistantPanel({
       // ------------------------------------------------
 
       else if (data.action?.type === "forward") {
+        // Forwarding must use the real email currently being viewed.
+        // Gemini may return generic placeholders such as "Fwd: Email"
+        // or "Forwarding this email as requested."; do not trust those
+        // values when the current email context is available.
+        const currentSubject =
+          contextEmail?.subject?.trim() || "";
+
+        const currentBody =
+          contextEmail?.body?.trim() ||
+          contextEmail?.snippet?.trim() ||
+          "";
+
+        const aiTo = String(data.action.to || "").trim();
+        const aiSubject = String(data.action.subject || "").trim();
+        const aiBody = String(data.action.body || "").trim();
+
+        const to =
+          aiTo && !aiTo.includes("example.com")
+            ? aiTo
+            : contextEmail?.to?.trim() || aiTo;
+
+        const subject = currentSubject
+          ? `Fwd: ${currentSubject.replace(/^Fwd:\s*/i, "")}`
+          : aiSubject || "Fwd:";
+
+        const body = currentBody || aiBody;
+
         onCompose({
-          to: data.action.to || "",
-          subject: data.action.subject || "",
-          body: data.action.body || "",
+          to,
+          subject,
+          body,
         });
 
         setReply(

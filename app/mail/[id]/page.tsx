@@ -24,7 +24,10 @@ export default function EmailDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Load the email
+  // --------------------------------------------------
+  // LOAD EMAIL
+  // --------------------------------------------------
+
   useEffect(() => {
     async function loadEmail() {
       try {
@@ -55,7 +58,10 @@ export default function EmailDetailPage() {
     }
   }, [id]);
 
-  // AI requested a new compose/reply window
+  // --------------------------------------------------
+  // AI COMPOSE / REPLY / FORWARD
+  // --------------------------------------------------
+
   function handleAssistantCompose(data: {
     to: string;
     subject: string;
@@ -63,16 +69,55 @@ export default function EmailDetailPage() {
   }) {
     const params = new URLSearchParams();
 
-    if (data.to) {
-      params.set("to", data.to);
+    let to = data.to || "";
+    let subject = data.subject || "";
+    let body = data.body || "";
+
+    // ------------------------------------------------
+    // FORWARD FIX
+    // Always use the real currently opened email
+    // for the forwarded subject and body.
+    // ------------------------------------------------
+
+    const isForward =
+      subject.trim().toLowerCase().startsWith("fwd:");
+
+    if (isForward && email) {
+      // Use the current email recipient if AI did not
+      // provide a valid recipient.
+      if (
+        !to.trim() ||
+        to.toLowerCase().includes("example.com")
+      ) {
+        to = email.to || "";
+      }
+
+      // Always use the actual current email subject.
+      subject = `Fwd: ${
+        email.subject || "(No subject)"
+      }`;
+
+      // Always use the actual current email body.
+      body =
+        email.body ||
+        email.snippet ||
+        "(No message)";
     }
 
-    if (data.subject) {
-      params.set("subject", data.subject);
+    // ------------------------------------------------
+    // Add values to compose URL
+    // ------------------------------------------------
+
+    if (to.trim()) {
+      params.set("to", to);
     }
 
-    if (data.body) {
-      params.set("body", data.body);
+    if (subject.trim()) {
+      params.set("subject", subject);
+    }
+
+    if (body.trim()) {
+      params.set("body", body);
     }
 
     router.push(
@@ -80,14 +125,22 @@ export default function EmailDetailPage() {
     );
   }
 
-  // AI requested an email search
-  async function handleAssistantSearch(query: string) {
+  // --------------------------------------------------
+  // AI SEARCH
+  // --------------------------------------------------
+
+  async function handleAssistantSearch(
+    query: string
+  ) {
     router.push(
       `/mail?q=${encodeURIComponent(query)}`
     );
   }
 
-  // AI requested another email to be opened
+  // --------------------------------------------------
+  // AI OPEN EMAIL
+  // --------------------------------------------------
+
   function handleAssistantOpen(id: string) {
     if (!id) {
       return;
@@ -96,15 +149,23 @@ export default function EmailDetailPage() {
     router.push(`/mail/${id}`);
   }
 
+  // --------------------------------------------------
+  // PAGE
+  // --------------------------------------------------
+
   return (
     <div className="h-screen flex bg-gray-100">
 
-      {/* MAIN EMAIL */}
+      {/* =========================================
+          MAIN EMAIL
+      ========================================= */}
+
       <main className="flex-1 overflow-y-auto p-10">
 
         <div className="max-w-5xl mx-auto">
 
           {/* Back button */}
+
           <button
             onClick={() => router.push("/mail")}
             className="border border-gray-300 bg-white px-5 py-3 rounded-xl font-semibold hover:bg-gray-100 mb-8"
@@ -112,31 +173,56 @@ export default function EmailDetailPage() {
             ← Back to Inbox
           </button>
 
+          {/* =====================================
+              LOADING
+          ===================================== */}
+
           {loading ? (
+
             <div className="bg-white rounded-2xl p-8">
               <p className="text-gray-500 text-lg">
                 Loading email...
               </p>
             </div>
+
           ) : error ? (
+
+            /* ===================================
+               ERROR
+            =================================== */
+
             <div className="bg-red-100 text-red-700 rounded-xl p-5">
               {error}
             </div>
+
           ) : !email ? (
+
+            /* ===================================
+               EMAIL NOT FOUND
+            =================================== */
+
             <div className="bg-white rounded-2xl p-8">
               <p className="text-gray-500">
                 Email not found.
               </p>
             </div>
+
           ) : (
+
+            /* ===================================
+               EMAIL CONTENT
+            =================================== */
+
             <div className="bg-white border border-gray-200 rounded-2xl p-10 shadow-sm">
 
               {/* SUBJECT */}
+
               <h1 className="text-3xl font-bold mb-8">
                 {email.subject || "(No subject)"}
               </h1>
 
               {/* EMAIL INFORMATION */}
+
               <div className="space-y-3 mb-8">
 
                 <p className="text-lg">
@@ -159,6 +245,7 @@ export default function EmailDetailPage() {
               <hr className="border-gray-300 mb-8" />
 
               {/* MESSAGE */}
+
               <div>
 
                 <h2 className="text-xl font-bold mb-4">
@@ -166,7 +253,9 @@ export default function EmailDetailPage() {
                 </h2>
 
                 <div className="text-lg text-gray-800 whitespace-pre-wrap leading-8">
-                  {email.body || email.snippet || "(No message)"}
+                  {email.body ||
+                    email.snippet ||
+                    "(No message)"}
                 </div>
 
               </div>
@@ -178,7 +267,10 @@ export default function EmailDetailPage() {
 
       </main>
 
-      {/* AI ASSISTANT */}
+      {/* =========================================
+          AI ASSISTANT
+      ========================================= */}
+
       <AssistantPanel
         onSearch={handleAssistantSearch}
         onCompose={handleAssistantCompose}

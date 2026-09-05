@@ -271,6 +271,83 @@ export async function POST(
     }
 
     // ==================================================
+    // DIRECT FORWARD HANDLING
+    // ==================================================
+    // Forwarding is deterministic: when the user asks to
+    // forward the currently open email, do not ask Gemini
+    // to invent the recipient, subject, or body.
+    // Use the actual email context supplied by the page.
+    // This also makes simple requests such as
+    // "Forward this email to my own email address" work.
+    // ==================================================
+
+    const lowerMessage = String(message).toLowerCase();
+
+    const isForwardRequest =
+      lowerMessage.includes("forward");
+
+    if (isForwardRequest && contextEmail) {
+      const currentUserEmail =
+        String(
+          session.user?.email ||
+            ""
+        ).trim();
+
+      const emailMatches =
+        String(message).match(
+          /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi
+        ) || [];
+
+      const saysOwnEmail =
+        lowerMessage.includes("my own email") ||
+        lowerMessage.includes("my email") ||
+        lowerMessage.includes("email myself") ||
+        lowerMessage.includes("to myself");
+
+      const recipient =
+        saysOwnEmail
+          ? currentUserEmail || contextEmail.to || ""
+          : emailMatches[0] ||
+            currentUserEmail ||
+            contextEmail.to ||
+            "";
+
+      const originalSubject =
+        String(
+          contextEmail.subject ||
+            ""
+        ).trim();
+
+      const originalBody =
+        String(
+          contextEmail.body ||
+            contextEmail.snippet ||
+            ""
+        ).trim();
+
+      return Response.json(
+        {
+          success: true,
+
+          action: {
+            type: "forward",
+            to: recipient,
+            subject:
+              originalSubject
+                ? `Fwd: ${originalSubject}`
+                : "Fwd:",
+            body:
+              originalBody ||
+              "(No message)",
+          },
+
+          reply:
+            "I prepared the current email for forwarding.",
+        }
+      );
+    }
+
+    // ==================================================
     // 1. SEARCH EMAILS
     // ==================================================
 
@@ -451,10 +528,14 @@ export async function POST(
       name: "forward_email",
 
       description:
-        "Prepare the currently viewed email to be forwarded to another recipient. " +
-        "Use the current email context supplied by the application. " +
+        "Prepare the CURRENTLY VIEWED EMAIL for forwarding. " +
+        "Use ONLY the current email context supplied by the application as the source. " +
+        "The subject MUST be exactly 'Fwd: ' followed by the actual current email subject. " +
+        "The body MUST copy the actual current email body exactly; do not summarize, rewrite, paraphrase, shorten, or add commentary. " +
+        "If the user says 'my own email', 'my email', 'email myself', or 'to myself', use the signed-in user's actual email address. " +
+        "NEVER use placeholders such as '[Original Subject]', '[Forwarded email content]', '[Current email subject unavailable]', or '[Current email body unavailable]'. " +
         "Do NOT send the forwarded email. " +
-        "Open the compose UI with the forwarding recipient, subject, and original email content visibly filled in.",
+        "Prepare only the compose action with the correct recipient, subject, and original body.",
 
       parameters: {
         type: Type.OBJECT,
@@ -548,7 +629,7 @@ export async function POST(
 
     if (contextEmail) {
       aiMessage =
-        `The user is currently viewing this email:\n\n` +
+        `CURRENT EMAIL:\n` +
         `From: ${
           contextEmail.from || ""
         }\n` +
@@ -561,27 +642,36 @@ export async function POST(
         `Date: ${
           contextEmail.date || ""
         }\n` +
-        `Message: ${
+        `Body:\n${
           contextEmail.body ||
           contextEmail.snippet ||
           ""
         }\n\n` +
-        `User request: ${message}\n\n` +
-        `Important instructions:\n` +
-        `- If the user says "reply to this", "reply to this email", "respond to this", or similar wording, use reply_to_email.\n` +
-        `- If the user says "forward this", "forward this email", or similar wording, use forward_email.\n` +
-        `- Use the current email above as the source for reply or forward actions.\n` +
-        `- If the user explicitly asks to send a new email, use send_email.\n`;
+        `USER REQUEST:\n${message}\n\n` +
+        `ACTION RULES:\n` +
+        `- First identify the user's requested action: SEARCH, OPEN, COMPOSE, REPLY, FORWARD, or SEND.\n` +
+        `- SEARCH: use search_emails and convert the request to Gmail search syntax.\n` +
+        `- OPEN/READ: use open_email to locate the requested email.\n` +
+        `- COMPOSE/DRAFT: use compose_email. Do not send the email.\n` +
+        `- REPLY: use reply_to_email. The recipient MUST be the current email sender and the subject MUST be based on the current email subject with Re: when needed.\n` +
+        `- FORWARD: use forward_email. The recipient, subject, and body MUST be based on the current email and the user's forwarding instruction.\n` +
+        `- FORWARD SUBJECT: use exactly "Fwd: " followed by the CURRENT EMAIL subject. Never invent a subject.\n` +
+        `- FORWARD BODY: copy the CURRENT EMAIL body exactly. Do not summarize, rewrite, paraphrase, shorten, or add commentary.\n` +
+        `- FORWARD RECIPIENT: when the user says "my own email", "my email", "email myself", or "to myself", use the signed-in user's actual email address.\n` +
+        `- FORWARD PLACEHOLDERS ARE FORBIDDEN: never use "[Original Subject]", "[Forwarded email content]", "[Current email subject unavailable]", "[Current email body unavailable]", "Original Message", or similar placeholder text.\n` +
+        `- SEND: use send_email only when the user explicitly asks to send an email. The application will request confirmation before actually sending.\n` +
+        `- NEVER send an email merely because the user asks to compose, reply, or forward it.\n`;
     } else {
       aiMessage =
-        `User request: ${message}\n\n` +
-        `Important instructions:\n` +
-        `- If the user explicitly asks to send an email, use send_email.\n` +
-        `- If the user asks to compose or draft an email without sending, use compose_email.\n` +
-        `- If the user asks to search or find emails, use search_emails.\n` +
-        `- If the user asks to open or read a specific email, use open_email.\n` +
-        `- If the user asks for unread, read, sender, keyword, or date filters, use search_emails.\n` +
-        `- Do not invent old dates for relative date phrases such as "today", "yesterday", or "this week".\n`;
+        `USER REQUEST:\n${message}\n\n` +
+        `ACTION RULES:\n` +
+        `- First identify the user's requested action: SEARCH, OPEN, COMPOSE, REPLY, FORWARD, or SEND.\n` +
+        `- SEARCH: use search_emails.\n` +
+        `- OPEN/READ: use open_email.\n` +
+        `- COMPOSE/DRAFT: use compose_email and do not send.\n` +
+        `- SEND: use send_email only when the user explicitly asks to send.\n` +
+        `- REPLY or FORWARD requires a current email context. If there is no current email context, do not invent one; ask the user to open the email first.\n` +
+        `- Do not invent dates for relative date phrases such as "today", "yesterday", or "this week".\n`;
     }
 
     // ==================================================
@@ -601,9 +691,7 @@ export async function POST(
         response =
           await ai.models.generateContent(
             {
-              model:
-                "gemini-3-flash-preview",
-
+              model: "gemini-3.5-flash-lite",
               contents:
                 aiMessage,
 
@@ -963,20 +1051,87 @@ export async function POST(
           functionCall.args ||
           {};
 
-        const to =
+        // Gemini can sometimes return placeholder values for
+        // "my email" or the current email fields. Prefer the
+        // real application context whenever those placeholders
+        // are returned.
+        const requestedTo =
+          String(args.to || "").trim();
+
+        const requestedSubject =
+          String(args.subject || "").trim();
+
+        const requestedBody =
+          String(args.body || "").trim();
+
+        const currentUserEmail =
           String(
-            args.to || ""
+            session.user?.email ||
+              ""
+          ).trim();
+
+        const contextRecipient =
+          String(
+            contextEmail?.to ||
+              ""
+          ).trim();
+
+        const contextSubject =
+          String(
+            contextEmail?.subject ||
+              ""
+          ).trim();
+
+        const contextBody =
+          String(
+            contextEmail?.body ||
+              contextEmail?.snippet ||
+              ""
+          ).trim();
+
+        const isPlaceholderRecipient =
+          !requestedTo ||
+          requestedTo
+            .toLowerCase()
+            .includes("example.com") ||
+          requestedTo
+            .toLowerCase()
+            .includes("my email") ||
+          requestedTo
+            .toLowerCase() === "me";
+
+        const isPlaceholderSubject =
+          !requestedSubject ||
+          requestedSubject.includes(
+            "[Original Subject]"
+          ) ||
+          requestedSubject === "Fwd:" ||
+          requestedSubject === "Fwd";
+
+        const isPlaceholderBody =
+          !requestedBody ||
+          requestedBody.includes(
+            "[Original email content"
+          ) ||
+          requestedBody.includes(
+            "[Original Email Content"
           );
+
+        const to =
+          isPlaceholderRecipient
+            ? currentUserEmail ||
+              contextRecipient
+            : requestedTo;
 
         const subject =
-          String(
-            args.subject || ""
-          );
+          isPlaceholderSubject
+            ? `Fwd: ${contextSubject}`
+            : requestedSubject;
 
         const body =
-          String(
-            args.body || ""
-          );
+          isPlaceholderBody
+            ? contextBody
+            : requestedBody;
 
         return Response.json(
           {
