@@ -299,17 +299,17 @@ export default function AssistantPanel({
   }
 
   return (
-    <aside className="w-96 bg-white border-l border-gray-300 p-6 flex flex-col">
+    <aside className="w-96 bg-white dark:bg-slate-900 border-l border-gray-300 dark:border-slate-800 p-6 flex flex-col transition-colors duration-200">
 
       {/* =============================================
           HEADER
       ============================================= */}
 
-      <h2 className="text-2xl font-bold mb-2">
+      <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
         AI Assistant
       </h2>
 
-      <p className="text-sm text-gray-500 mb-6">
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
         Ask me to help with your email.
       </p>
 
@@ -318,17 +318,17 @@ export default function AssistantPanel({
       ============================================= */}
 
       {contextEmail && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+        <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-xl p-3 mb-4">
 
-          <p className="text-xs text-blue-600 font-semibold mb-1">
+          <p className="text-xs text-blue-600 dark:text-blue-300 font-semibold mb-1">
             CURRENT EMAIL
           </p>
 
-          <p className="text-sm font-semibold text-gray-800 truncate">
+          <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
             {contextEmail.subject || "(No subject)"}
           </p>
 
-          <p className="text-xs text-gray-500 truncate">
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
             From: {contextEmail.from}
           </p>
 
@@ -339,18 +339,18 @@ export default function AssistantPanel({
           ASSISTANT RESPONSE
       ============================================= */}
 
-      <div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 min-h-32">
+      <div className="flex-1 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 mb-4 min-h-32">
 
         {loading ? (
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-gray-400">
             Thinking...
           </p>
         ) : reply ? (
-          <p className="text-gray-800 whitespace-pre-wrap">
+          <p className="text-gray-800 dark:text-gray-100 whitespace-pre-wrap">
             {reply}
           </p>
         ) : (
-          <p className="text-gray-400">
+          <p className="text-gray-400 dark:text-gray-500">
             Try asking:
             <br />
             "Find emails from Claude"
@@ -379,13 +379,13 @@ export default function AssistantPanel({
       ============================================= */}
 
       {pendingEmail && (
-        <div className="border border-blue-300 bg-blue-50 rounded-xl p-4 mb-4">
+        <div className="border border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 rounded-xl p-4 mb-4">
 
-          <p className="font-bold text-blue-800 mb-3">
+          <p className="font-bold text-blue-800 dark:text-blue-200 mb-3">
             Confirm Email
           </p>
 
-          <div className="space-y-2 text-sm">
+          <div className="space-y-2 text-sm text-gray-800 dark:text-gray-200">
 
             <p>
               <span className="font-semibold">
@@ -406,7 +406,7 @@ export default function AssistantPanel({
                 Message:
               </p>
 
-              <p className="bg-white border border-gray-200 rounded-lg p-2 mt-1 whitespace-pre-wrap max-h-32 overflow-y-auto">
+              <p className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-2 mt-1 whitespace-pre-wrap max-h-32 overflow-y-auto">
                 {pendingEmail.body}
               </p>
             </div>
@@ -418,7 +418,7 @@ export default function AssistantPanel({
             <button
               onClick={confirmSend}
               disabled={loading}
-              className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400"
+              className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400 transition"
             >
               Send Email
             </button>
@@ -426,7 +426,7 @@ export default function AssistantPanel({
             <button
               onClick={cancelSend}
               disabled={loading}
-              className="flex-1 border border-gray-300 bg-white py-2 rounded-lg font-semibold hover:bg-gray-100 disabled:bg-gray-200"
+              className="flex-1 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-200 py-2 rounded-lg font-semibold hover:bg-gray-100 dark:hover:bg-slate-700 disabled:bg-gray-200 dark:disabled:bg-slate-700 transition"
             >
               Cancel
             </button>
@@ -455,7 +455,7 @@ export default function AssistantPanel({
           }
         }}
         placeholder="Ask your email assistant..."
-        className="w-full h-24 bg-white border border-gray-300 rounded-lg p-3 resize-none outline-none focus:ring-2 focus:ring-blue-500 mb-3"
+        className="w-full h-24 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border border-gray-300 dark:border-slate-700 rounded-xl p-3 resize-none outline-none focus:ring-2 focus:ring-blue-500 mb-3 transition-colors"
       />
 
       {/* =============================================
@@ -467,7 +467,7 @@ export default function AssistantPanel({
         disabled={
           loading || !message.trim()
         }
-        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400"
+        className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:bg-gray-400 transition"
       >
         {loading
           ? "Thinking..."
