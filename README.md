@@ -1,202 +1,232 @@
-# Nebula Mail
+**# Nebula Mail**
+
 An AI-powered mail web application that integrates Gmail with an AI assistant capable of controlling the mail interface through natural-language commands.
 
-## Live Demo
-[Nebula Mail Live Demo](https://nebula-mail-app.vercel.app)
+**## Live Demo**
 
-## GitHub Repository
-[GitHub Repository](https://github.com/Dheepak186/nebula-mail-app)
+[Nebula Mail Live Demo]\(https\://nebula-mail-app.vercel.app)
 
----
-## Project Overview
+**## GitHub Repository**
+
+[GitHub Repository]\(https\://github.com/Dheepak186/nebula-mail-app)
+
+**---**
+
+**## Project Overview**
+
 Nebula Mail is a Gmail-integrated web application built as an engineering hiring-task project.
 
 The application combines:
 
-* Real Gmail account integration
+\* Real Gmail account integration
 
-* Inbox and Sent mail
+\* Inbox and Sent mail
 
-* Email search and filtering
+\* Email search and filtering
 
-* Email composition and sending
+\* Email composition and sending
 
-* AI-powered email actions
+\* AI-powered email actions
 
-* Context-aware reply and forward
+\* Context-aware reply and forward
 
-* Real-time Gmail synchronization
+\* Real-time Gmail synchronization
 
-* Human confirmation before AI-triggered sending
+\* Human confirmation before AI-triggered sending
 
 The main goal is to make the AI assistant an interactive controller of the mail interface rather than only a conversational chatbot.
 
----
-# Key Features
-## Gmail Integration
+**---**
+
+**# Key Features**
+
+**## Gmail Integration**
+
 The application connects to a real Gmail account using Google OAuth.
 
 Supported Gmail operations include:
 
-* Read Inbox emails
+\* Read Inbox emails
 
-* Read Sent emails
+\* Read Sent emails
 
-* Open individual emails
+\* Open individual emails
 
-* Search emails
+\* Search emails
 
-* Filter emails
+\* Filter emails
 
-* Compose emails
+\* Compose emails
 
-* Send real emails
+\* Send real emails
 
----
-## Inbox
+**---**
+
+**## Inbox**
+
 The Inbox displays real emails from the connected Gmail account.
 
 Each email can be opened to view its details.
 
----
-## Sent Mail
+**---**
+
+**## Sent Mail**
+
 The Sent section displays emails sent through the connected Gmail account.
 
----
-## Compose Email
+**---**
+
+**## Compose Email**
+
 Users can manually compose an email with:
 
-* Recipient
+\* Recipient
 
-* Subject
+\* Subject
 
-* Message
+\* Message
 
 The email can then be sent through Gmail.
 
----
-## Email Filters
+**---**
+
+**## Email Filters**
+
 The Inbox supports filtering by:
 
-* Keyword
+\* Keyword
 
-* Sender
+\* Sender
 
-* From date
+\* From date
 
-* To date
+\* To date
 
-* Read status
+\* Read status
 
-* Unread status
+\* Unread status
 
 Multiple filters can be combined.
 
----
-# AI Assistant
+**---**
+
+**# AI Assistant**
+
 The AI Assistant is the main feature of Nebula Mail.
 
 Instead of only returning text responses, the assistant can perform actions inside the application.
 
-## Supported AI Actions
-### Compose
+**## Supported AI Actions**
+
+**### Compose**
+
 Example:
 
-> Compose an email to [john@example.com](mailto:john@example.com) with subject Meeting Tomorrow and body Let's meet at 3pm.
+\> Compose an email to [john\@example.com]\(mailto\:john\@example.com) with subject Meeting Tomorrow and body Let's meet at 3pm.
 
 The assistant opens the compose page and fills:
 
-* To
+\* To
 
-* Subject
+\* Subject
 
-* Message
+\* Message
 
 The user can review the generated content before sending.
 
-### Send
+**### Send**
+
 Example:
 
-> Send an email to [john@example.com](mailto:john@example.com) with subject Meeting Tomorrow and body Let's meet at 3pm.
+\> Send an email to [john\@example.com]\(mailto\:john\@example.com) with subject Meeting Tomorrow and body Let's meet at 3pm.
 
 The assistant prepares the email and displays a confirmation card.
 
 The user can review:
 
-* Recipient
+\* Recipient
 
-* Subject
+\* Subject
 
-* Message
+\* Message
 
-The email is sent only after the user clicks **\*\*Send Email\*\***.
+The email is sent only after the user clicks **\*\*\\\*\\\*Send Email\\\*\\\*\*\***.
 
 This provides a human-in-the-loop confirmation step before an external action.
 
-### Search
+**### Search**
+
 Example:
 
-> Find emails from Chess.com.
+\> Find emails from Chess.com.
 
 The assistant converts the request into a Gmail search operation and updates the main Inbox with the matching messages.
 
-### Filtering
+**### Filtering**
+
 The assistant can translate natural-language requests into mail filters.
 
 Examples:
 
-> Find unread emails.
+\> Find unread emails.
 
-> Find emails from Claude.
+\> Find emails from Claude.
 
-> Find emails from today.
+\> Find emails from today.
 
-> Find emails from Claude containing the word plan.
+\> Find emails from Claude containing the word plan.
 
 The assistant applies the appropriate filters and displays the matching emails in the main mail interface.
 
-### Open Email
+**### Open Email**
+
 Example:
 
-> Open the email from Chess.com.
+\> Open the email from Chess.com.
 
 The assistant navigates to the corresponding email detail page.
 
-### Reply
+**### Reply**
+
 When an email is currently open, the user can say:
 
-> Reply to this saying thanks.
+\> Reply to this saying thanks.
 
 The assistant understands the currently displayed email and prepares a reply using the email as context.
 
-### Forward
+**### Forward**
+
 Example:
 
-> Forward this email to [john@example.com](mailto:john@example.com).
+\> Forward this email to [john\@example.com]\(mailto\:john\@example.com).
 
 The assistant prepares a forwarded email using the currently opened email as context.
 
----
-# Context Awareness
+**---**
+
+**# Context Awareness**
+
 The AI Assistant can use the currently opened email as context.
 
 For example:
 
-1. User opens an email.
+1\. User opens an email.
 
-2. User asks: "Reply to this saying thanks."
+2\. User asks: "Reply to this saying thanks."
 
-3. The assistant identifies the current email.
+3\. The assistant identifies the current email.
 
-4. The reply is prepared using the current email context.
+4\. The reply is prepared using the current email context.
 
 This allows the assistant to operate on the email currently being viewed instead of requiring the user to manually provide the email information again.
 
----
-# Architecture
+**---**
+
+**# Architecture**
+
 Nebula Mail uses a web application architecture where the frontend, backend API routes, Gmail APIs, AI processing, and real-time notification system work together.
 
-```text
+\`\`\`text
 
                          ┌──────────────────────┐
 
@@ -252,6 +282,8 @@ Nebula Mail uses a web application architecture where the frontend, backend API 
 
 
 
+
+
 Real-Time Synchronization:
 
 Gmail
@@ -286,97 +318,125 @@ Nebula Mail Realtime State
 
 Mail UI
 
-```
+\`\`\`
 
----
-# Architecture Decisions and Trade-offs
-## Next.js Application Architecture
+**---**
+
+**# Architecture Decisions and Trade-offs**
+
+**## Next.js Application Architecture**
+
 The application uses a Next.js-based architecture so that the user interface and backend API routes can be maintained within the same project.
 
-### Decision
+**### Decision**
+
 Use Next.js for both the mail interface and server-side API functionality.
 
-### Reason
+**### Reason**
+
 This keeps the project relatively simple for a small application and avoids maintaining separate frontend and backend deployments.
 
-### Trade-off
+**### Trade-off**
+
 A larger production system could separate frontend and backend services for independent scaling and deployment. For this project, the single application architecture keeps development and deployment simpler.
 
----
-## Gmail API Integration
+**---**
+
+**## Gmail API Integration**
+
 The application uses the Gmail API rather than mocking email data.
 
-### Decision
+**### Decision**
+
 Use real Gmail data and Gmail operations.
 
-### Reason
+**### Reason**
+
 The hiring task requires real Gmail integration and actual email sending.
 
-### Trade-off
+**### Trade-off**
+
 Real Gmail integration introduces OAuth configuration, access-token handling, API limitations, and external dependency on Google's services. However, it provides a realistic mail application rather than a simulated demo.
 
----
-## AI as an Action Controller
+**---**
+
+**## AI as an Action Controller**
+
 The AI Assistant is designed to perform application actions instead of only generating conversational responses.
 
-### Decision
+**### Decision**
+
 Natural-language commands are translated into application actions such as:
 
-* Compose
+\* Compose
 
-* Search
+\* Search
 
-* Filter
+\* Filter
 
-* Open
+\* Open
 
-* Reply
+\* Reply
 
-* Forward
+\* Forward
 
-* Send
+\* Send
 
-### Reason
+**### Reason**
+
 The main objective is to demonstrate an AI assistant that can control the mail interface.
 
-### Trade-off
+**### Trade-off**
+
 Action-based AI requires additional validation and state management compared with a simple chatbot. The benefit is a more useful and interactive user experience.
 
----
-## Human Confirmation Before Sending
+**---**
+
+**## Human Confirmation Before Sending**
+
 AI-generated emails are not automatically sent without user confirmation.
 
-### Decision
+**### Decision**
+
 Display the generated email content and require the user to confirm sending.
 
-### Reason
+**### Reason**
+
 Sending an email is an external action with real-world consequences.
 
-### Trade-off
+**### Trade-off**
+
 This adds one interaction step, but it reduces the risk of accidental or incorrect AI-triggered email sending.
 
----
-## Real-Time Gmail Synchronization
+**---**
+
+**## Real-Time Gmail Synchronization**
+
 The application uses Gmail Watch notifications with Google Cloud Pub/Sub.
 
-### Decision
+**### Decision**
+
 Use Gmail push notifications instead of continuously polling Gmail from the browser.
 
-### Reason
+**### Reason**
+
 Push notifications are more efficient and better suited for detecting changes to the mailbox.
 
-### Trade-off
+**### Trade-off**
+
 The implementation requires Google Cloud Pub/Sub configuration and webhook infrastructure. Real-time synchronization is therefore more complex than simple client-side polling.
 
 The backend Gmail watch and webhook flow has been verified in production.
 
----
-# Real-Time Gmail Synchronization
+**---**
+
+**# Real-Time Gmail Synchronization**
+
 Nebula Mail implements Gmail push notifications using Google Cloud Pub/Sub.
 
 The synchronization flow is:
 
-```text
+\`\`\`text
 
 Gmail
 
@@ -410,27 +470,29 @@ Nebula Mail Realtime State
 
 Mail UI
 
-```
+\`\`\`
 
 The project includes backend components for:
 
-* Gmail watch registration
+\* Gmail watch registration
 
-* Gmail webhook handling
+\* Gmail webhook handling
 
-* Synchronization state
+\* Synchronization state
 
-* Real-time event processing
+\* Real-time event processing
 
 The production Gmail watch and webhook notification flow has been tested successfully.
 
----
-# Project Structure
+**---**
+
+**# Project Structure**
+
 The project follows a Next.js application structure.
 
 Important areas include:
 
-```text
+\`\`\`text
 
 app/
 
@@ -448,11 +510,11 @@ lib/
 
   Application utilities
 
-```
+\`\`\`
 
 Important real-time files include:
 
-```text
+\`\`\`text
 
 lib/gmail-realtime.ts
 
@@ -462,112 +524,131 @@ app/api/gmail/sync-status/route.ts
 
 app/api/gmail/watch/route.ts
 
-```
+\`\`\`
 
----
-# Setup Instructions
-## Prerequisites
+**---**
+
+**# Setup Instructions**
+
+**## Prerequisites**
+
 Install:
 
-* Node.js
+\* Node.js
 
-* npm
+\* npm
 
-* Git
+\* Git
 
 A Google Cloud project with Gmail API and OAuth configuration is required for real Gmail integration.
 
 An AI API configuration is also required for the AI Assistant functionality.
 
----
-## Clone the Repository
-```bash
+**---**
 
-git clone https://github.com/Dheepak186/nebula-mail-app.git
+**## Clone the Repository**
+
+\`\`\`bash
+
+git clone https\://github.com/Dheepak186/nebula-mail-app.git
 
 cd nebula-mail-app
 
-```
+\`\`\`
 
----
-## Install Dependencies
-```bash
+**---**
+
+**## Install Dependencies**
+
+\`\`\`bash
 
 npm install
 
-```
+\`\`\`
 
----
-## Environment Variables
+**---**
+
+**## Environment Variables**
+
 Create a local environment file:
 
-```text
+\`\`\`text
 
 .env.local
 
-```
+\`\`\`
 
 Configure the required environment variables for:
 
-* Google OAuth
+\* Google OAuth
 
-* Gmail API access
+\* Gmail API access
 
-* AI API access
+\* AI API access
 
-* Application configuration
+\* Application configuration
 
-**\*\*Do not commit \`.env.local\` or any credentials to GitHub.\*\***
+**\*\*\\\*\\\*Do not commit \\\`.env.local\\\` or any credentials to GitHub.\\\*\\\*\*\***
 
 The exact environment variable names should match the variables used by the application source code.
 
----
-## Run the Development Server
-```bash
+**---**
+
+**## Run the Development Server**
+
+\`\`\`bash
 
 npm run dev
 
-```
+\`\`\`
 
 The application can then be opened locally in the browser.
 
----
-## Production Build
+**---**
+
+**## Production Build**
+
 To verify the project builds successfully:
 
-```bash
+\`\`\`bash
 
 npm run build
 
-```
+\`\`\`
 
----
-## Run Tests
+**---**
+
+**## Run Tests**
 
 The project includes Vitest unit tests for Gmail email-processing utilities.
 
-```bash
+\`\`\`bash
+
 npm run test
-```
 
----
+\`\`\`
 
-# Deployment
+**---**
+
+**# Deployment**
+
 The application is deployed using Vercel.
 
 Live application:
 
-https://nebula-mail-app.vercel.app
+https\://nebula-mail-app.vercel.app
 
 The production deployment includes the Gmail integration and AI Assistant functionality.
 
----
-# AI Assistant Demo
+**---**
+
+**# AI Assistant Demo**
+
 The assistant can control the mail interface using natural-language commands.
 
 Example workflow:
 
-```text
+\`\`\`text
 
 User:
 
@@ -589,11 +670,11 @@ Applies the unread filter
 
 Main Inbox displays matching emails
 
-```
+\`\`\`
 
 Another example:
 
-```text
+\`\`\`text
 
 User:
 
@@ -615,15 +696,15 @@ Identifies the matching message
 
 Opens the email detail page
 
-```
+\`\`\`
 
 Compose workflow:
 
-```text
+\`\`\`text
 
 User:
 
-"Compose an email to john@example.com
+"Compose an email to john\@example.com
 
 with subject Meeting Tomorrow"
 
@@ -647,118 +728,162 @@ User reviews the email
 
 User confirms Send
 
-```
+\`\`\`
 
 These workflows demonstrate that the assistant is interacting with the application's UI state rather than acting only as a text chatbot.
 
----
-# Screenshots / Demo Evidence
+**---**
+
+**# Screenshots / Demo Evidence
 
 The project was tested using the deployed application and real Gmail data.
 
 The demonstration covers:
 
 1. Real Gmail Inbox with received messages.
-2. Email detail view with current-email context available to the AI Assistant.
-3. AI Compose filling To, Subject, and Message.
-4. AI Search updating the main Inbox.
-5. AI Filter actions for unread, date, sender, and keyword filtering.
-6. AI Open navigating to a matching email.
-7. AI Reply using the currently opened email as context.
-8. AI Forward using the currently opened email as context.
-9. AI Send preparing an email and requiring human confirmation before sending.
-10. Gmail real-time synchronization where a newly received message appears without manually refreshing the page.
-11. Gmail Thread View displaying multiple messages in the same conversation.
-12. Dark Mode with persistent user preference.
+
+![Nebula Mail Inbox](public/screenshots/01-inbox.png)
+
+2. AI Compose filling To, Subject, and Message.
+
+![AI Compose](public/screenshots/02-ai-compose.png)
+
+3. AI Search updating the main Inbox.
+
+![AI Search](public/screenshots/03-ai-search.png)
+
+4. AI Send preparing an email and requiring human confirmation before sending.
+
+![AI Send Confirmation](public/screenshots/04-ai-send-confirmation.png)
+
+5. Gmail real-time synchronization where a newly received message appears without manually refreshing the page.
+
+![Real-Time Gmail Sync](public/screenshots/05-realtime-sync.png)
+
+6. Gmail Thread View displaying multiple messages in the same conversation.
+
+![Gmail Thread View](public/screenshots/06-thread-view.png)
+
+7. Dark Mode with persistent user preference.
+
+![Nebula Mail Dark Mode](public/screenshots/07-dark-mode.png)
+
+Additional demonstrated AI capabilities include:
+
+- Email detail view with current-email context available to the AI Assistant.
+- AI Filter actions for unread, date, sender, and keyword filtering.
+- AI Open navigating to a matching email.
+- AI Reply using the currently opened email as context.
+- AI Forward using the currently opened email as context.
+
+These screenshots provide visual evidence of the main required functionality and implemented bonus features.
 
 ---
-# Security Considerations
-* Google OAuth is used for Gmail authentication.
 
-* Credentials and API keys are stored through environment variables.
+# Security Considerations**
 
-* Secrets should not be committed to the public repository.
+\* Google OAuth is used for Gmail authentication.
 
-* AI-triggered email sending uses a human confirmation step.
+\* Credentials and API keys are stored through environment variables.
 
-* Gmail operations are performed through authenticated API requests.
+\* Secrets should not be committed to the public repository.
 
----
-# What I Would Improve With More Time
+\* AI-triggered email sending uses a human confirmation step.
+
+\* Gmail operations are performed through authenticated API requests.
+
+**---**
+
+**# What I Would Improve With More Time**
 
 The main required and bonus functionality has been implemented. Further improvements could include:
 
-## 1. More Natural AI Command Handling
+**## 1. More Natural AI Command Handling**
 
 Expand the AI command layer to understand more variations of the same request and provide clearer explanations when an action cannot be completed.
 
-## 2. More Comprehensive Automated Testing
+**## 2. More Comprehensive Automated Testing**
 
 Additional integration and end-to-end tests could cover:
 
-- Gmail API operations
-- AI command parsing
-- Search and filters
-- Compose and send
-- Reply and forward
-- Authentication
-- Real-time synchronization
+\- Gmail API operations
 
-## 3. Richer AI Action Previews
+\- AI command parsing
+
+\- Search and filters
+
+\- Compose and send
+
+\- Reply and forward
+
+\- Authentication
+
+\- Real-time synchronization
+
+**## 3. Richer AI Action Previews**
 
 The assistant could provide richer visual previews for search results, email previews, suggested replies, and filter summaries.
 
-## 4. Accessibility and Responsive Refinements
+**## 4. Accessibility and Responsive Refinements**
 
 Additional keyboard navigation, accessibility improvements, animations, and mobile-specific layout refinements could further improve the application.
 
----
+**---**
 
-# Current Project Status
+**# Current Project Status**
+
 The main hiring-task functionality has been implemented and tested:
 
-* Real Gmail integration
+\* Real Gmail integration
 
-* Google OAuth
+\* Google OAuth
 
-* Inbox
+\* Inbox
 
-* Sent mail
+\* Sent mail
 
-* Compose
+\* Compose
 
-* Real email sending
+\* Real email sending
 
-* AI Compose
+\* AI Compose
 
-* AI Send
+\* AI Send
 
-* AI Search
+\* AI Search
 
-* AI Filters
+\* AI Filters
 
-* AI Open
+\* AI Open
 
-* Context-aware AI Reply
+\* Context-aware AI Reply
 
-* AI Forward
+\* AI Forward
 
-* Gmail real-time synchronization with automatic Inbox updates
+\* Gmail real-time synchronization with automatic Inbox updates
 
-* Google Cloud Pub/Sub integration
+\* Google Cloud Pub/Sub integration
 
-* Vercel deployment
+\* Vercel deployment
 
-* Public GitHub repository
-* Gmail Thread View
-* Human confirmation before AI-triggered sending
-* Rich Inbox UI
-* Dark Mode
-* Persistent theme preference
-* Automated unit tests with Vitest
+\* Public GitHub repository
+
+\* Gmail Thread View
+
+\* Human confirmation before AI-triggered sending
+
+\* Rich Inbox UI
+
+\* Dark Mode
+
+\* Persistent theme preference
+
+\* Automated unit tests with Vitest
 
 The project is intended to demonstrate how an AI assistant can interact with and control a real mail application through natural-language commands.
 
----
-# License
+**---**
+
+**# License**
+
 This project was created as part of the Nebula KnowLab 2027 Batch hiring task.
