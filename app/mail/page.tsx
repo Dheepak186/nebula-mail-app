@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import AssistantPanel from "@/components/AssistantPanel";
 
 type Email = {
@@ -15,6 +16,7 @@ type Email = {
 
 export default function MailPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   const [emails, setEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,8 +88,28 @@ export default function MailPage() {
   }
 
   useEffect(() => {
-    loadInbox();
-  }, []);
+    // Only load the inbox once we know the user is actually
+    // signed in. Loading it unconditionally would hit the Gmail
+    // API with no session and just show a "Failed to load
+    // emails" error instead of redirecting to login.
+    if (status === "authenticated") {
+      loadInbox();
+    }
+  }, [status]);
+
+  // ---------------------------------------------
+  // AUTH GUARD
+  // ---------------------------------------------
+  // If NextAuth confirms there is no session, send the user back
+  // to the home page where they can sign in. This prevents the
+  // Inbox page from being reachable directly (e.g. via a shared
+  // link or bookmark) without being logged in.
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/");
+    }
+  }, [status, router]);
 
   // ---------------------------------------------
   // REALTIME SYNC (SAFE BACKGROUND POLLING)
@@ -100,6 +122,12 @@ export default function MailPage() {
   // the loading state, so the UI never flickers.
 
   useEffect(() => {
+    // Don't start background polling until we know the user is
+    // signed in - there is nothing to sync for a logged-out user.
+    if (status !== "authenticated") {
+      return;
+    }
+
     let cancelled = false;
 
     async function checkSyncStatus() {
@@ -145,7 +173,7 @@ export default function MailPage() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [status]);
 
   // ---------------------------------------------
   // BUILD GMAIL FILTER QUERY
@@ -342,6 +370,23 @@ export default function MailPage() {
     filtersActiveRef.current = false;
 
     loadInbox();
+  }
+
+  // ---------------------------------------------
+  // AUTH LOADING / BLOCKED STATE
+  // ---------------------------------------------
+  // While NextAuth is still figuring out whether there is a
+  // session, or once we know there isn't one (and the redirect
+  // above is about to kick in), show a simple neutral screen
+  // instead of the Inbox UI. This avoids ever flashing "Failed
+  // to load emails" for a logged-out visitor.
+
+  if (status === "loading" || status === "unauthenticated") {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-100">
+        <p className="text-gray-500 text-lg">Checking sign-in status...</p>
+      </div>
+    );
   }
 
   // ---------------------------------------------
