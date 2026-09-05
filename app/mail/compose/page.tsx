@@ -14,6 +14,40 @@ export default function ComposePage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const [darkMode, setDarkMode] = useState(false);
+
+  // --------------------------------------------------
+  // DARK MODE
+  // --------------------------------------------------
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("nebula-theme");
+
+    if (savedTheme === "dark") {
+      setDarkMode(true);
+      document.documentElement.classList.add("dark");
+    } else {
+      setDarkMode(false);
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  function toggleDarkMode() {
+    setDarkMode((current) => {
+      const next = !current;
+
+      if (next) {
+        document.documentElement.classList.add("dark");
+        localStorage.setItem("nebula-theme", "dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+        localStorage.setItem("nebula-theme", "light");
+      }
+
+      return next;
+    });
+  }
+
   // --------------------------------------------------
   // LOAD AI COMPOSE DATA FROM URL
   // --------------------------------------------------
@@ -35,7 +69,6 @@ export default function ComposePage() {
   // --------------------------------------------------
 
   async function handleSend() {
-    // Read URL values again as a safety fallback.
     const params = new URLSearchParams(window.location.search);
 
     const finalTo =
@@ -73,17 +106,12 @@ export default function ComposePage() {
 
       const response = await fetch("/api/gmail/send", {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify({
           to: finalTo,
           subject: finalSubject,
-
-          // Send both names so the API is compatible
-          // with either implementation.
           body: finalBody,
           message: finalBody,
         }),
@@ -99,11 +127,9 @@ export default function ComposePage() {
 
       setMessage("Email sent successfully!");
 
-      // Return to inbox after sending.
       setTimeout(() => {
         router.push("/mail");
       }, 1000);
-
     } catch (error) {
       console.error("Send email error:", error);
 
@@ -112,7 +138,6 @@ export default function ComposePage() {
           ? error.message
           : "Failed to send email"
       );
-
     } finally {
       setSending(false);
     }
@@ -123,45 +148,60 @@ export default function ComposePage() {
   // --------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-gray-100 p-10">
-
+    <div className="min-h-screen bg-gray-100 dark:bg-slate-950 text-gray-900 dark:text-gray-100 p-10 transition-colors duration-200">
       <div className="max-w-4xl mx-auto">
 
         {/* HEADER */}
-
         <div className="flex items-center justify-between mb-8">
-
           <div>
-            <h1 className="text-4xl font-bold">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
               Compose Email
             </h1>
 
-            <p className="text-gray-500 mt-2">
+            <p className="text-gray-500 dark:text-gray-400 mt-2">
               Write and send an email through Gmail.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => router.push("/mail")}
-            className="border border-gray-300 bg-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-100"
-          >
-            Back to Inbox
-          </button>
+          <div className="flex items-center gap-3">
+            {/* DARK MODE */}
 
+            <button
+              type="button"
+              onClick={toggleDarkMode}
+              className="flex items-center gap-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 px-5 py-3 rounded-xl font-semibold hover:bg-gray-100 dark:hover:bg-slate-700 transition"
+            >
+              <span>
+                {darkMode ? "Dark Mode" : "Light Mode"}
+              </span>
+
+              <span className="text-xl">
+                {darkMode ? "🌙" : "☀️"}
+              </span>
+            </button>
+
+            {/* BACK TO INBOX */}
+
+            <button
+              type="button"
+              onClick={() => router.push("/mail")}
+              className="border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-200 px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 dark:hover:bg-slate-800 transition"
+            >
+              Back to Inbox
+            </button>
+          </div>
         </div>
 
         {/* COMPOSE CARD */}
 
-        <div className="bg-white border border-gray-300 rounded-2xl p-8 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-800 rounded-2xl p-8 shadow-sm transition-colors duration-200">
 
           {/* TO */}
 
           <div className="mb-6">
-
             <label
               htmlFor="email-to"
-              className="block text-lg font-semibold mb-2"
+              className="block text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100"
             >
               To
             </label>
@@ -176,18 +216,16 @@ export default function ComposePage() {
                 setError("");
               }}
               placeholder="recipient@example.com"
-              className="w-full border border-gray-300 rounded-xl px-5 py-4 text-lg outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border border-gray-300 dark:border-slate-700 rounded-xl px-5 py-4 text-lg outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             />
-
           </div>
 
           {/* SUBJECT */}
 
           <div className="mb-6">
-
             <label
               htmlFor="email-subject"
-              className="block text-lg font-semibold mb-2"
+              className="block text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100"
             >
               Subject
             </label>
@@ -202,18 +240,16 @@ export default function ComposePage() {
                 setError("");
               }}
               placeholder="Email subject"
-              className="w-full border border-gray-300 rounded-xl px-5 py-4 text-lg outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border border-gray-300 dark:border-slate-700 rounded-xl px-5 py-4 text-lg outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             />
-
           </div>
 
           {/* MESSAGE */}
 
           <div className="mb-6">
-
             <label
               htmlFor="email-body"
-              className="block text-lg font-semibold mb-2"
+              className="block text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100"
             >
               Message
             </label>
@@ -227,15 +263,14 @@ export default function ComposePage() {
                 setError("");
               }}
               placeholder="Write your message..."
-              className="w-full h-72 border border-gray-300 rounded-xl px-5 py-4 text-lg outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full h-72 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border border-gray-300 dark:border-slate-700 rounded-xl px-5 py-4 text-lg outline-none focus:ring-2 focus:ring-blue-500 resize-none transition-colors"
             />
-
           </div>
 
           {/* SUCCESS MESSAGE */}
 
           {message && (
-            <div className="bg-green-100 text-green-700 p-4 rounded-xl mb-6">
+            <div className="bg-green-100 dark:bg-green-950/40 border border-green-200 dark:border-green-900 text-green-700 dark:text-green-300 p-4 rounded-xl mb-6">
               {message}
             </div>
           )}
@@ -243,7 +278,7 @@ export default function ComposePage() {
           {/* ERROR MESSAGE */}
 
           {error && (
-            <div className="bg-red-100 text-red-700 p-4 rounded-xl mb-6">
+            <div className="bg-red-100 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 p-4 rounded-xl mb-6">
               {error}
             </div>
           )}
@@ -251,11 +286,10 @@ export default function ComposePage() {
           {/* BUTTONS */}
 
           <div className="flex gap-4">
-
             <button
               type="button"
               onClick={() => router.push("/mail")}
-              className="flex-1 border border-gray-300 py-4 rounded-xl text-lg font-semibold hover:bg-gray-100"
+              className="flex-1 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-200 py-4 rounded-xl text-lg font-semibold hover:bg-gray-100 dark:hover:bg-slate-800 transition"
             >
               Cancel
             </button>
@@ -264,19 +298,15 @@ export default function ComposePage() {
               type="button"
               onClick={handleSend}
               disabled={sending}
-              className="flex-1 bg-blue-600 text-white py-4 rounded-xl text-lg font-bold hover:bg-blue-700 disabled:bg-gray-400"
+              className="flex-1 bg-blue-600 text-white py-4 rounded-xl text-lg font-bold hover:bg-blue-700 disabled:bg-gray-400 transition"
             >
               {sending
                 ? "Sending..."
                 : "Send Email"}
             </button>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }
