@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AssistantPanel from "@/components/AssistantPanel";
 
@@ -28,13 +28,27 @@ export default function MailPage() {
   const [toDate, setToDate] = useState("");
   const [readStatus, setReadStatus] = useState("all");
 
+  // Tracks whether the user currently has any filter/search applied.
+  // We avoid overwriting a user's active search results with a
+  // background inbox refresh.
+  const filtersActiveRef = useRef(false);
+
+  // Tracks the last realtime "version" we have seen, so we only
+  // refresh when something has actually changed.
+  const lastVersionRef = useRef<number | null>(null);
+
   // ---------------------------------------------
   // LOAD INBOX
   // ---------------------------------------------
 
-  async function loadInbox() {
+  async function loadInbox(options?: { silent?: boolean }) {
+    const silent = options?.silent ?? false;
+
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
+
       setError("");
 
       const response = await fetch("/api/gmail/inbox", {
@@ -58,14 +72,79 @@ export default function MailPage() {
       setEmails(inboxEmails);
     } catch (error) {
       console.error("Inbox load failed:", error);
-      setError("Failed to load emails");
+
+      // Don't surface an error banner for a silent background
+      // refresh failure - only show it for a user-triggered load.
+      if (!silent) {
+        setError("Failed to load emails");
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }
 
   useEffect(() => {
     loadInbox();
+  }, []);
+
+  // ---------------------------------------------
+  // REALTIME SYNC (SAFE BACKGROUND POLLING)
+  // ---------------------------------------------
+  // We do NOT poll the full inbox on a timer (that caused emails
+  // to flash/disappear previously). Instead we poll a lightweight
+  // sync-status endpoint that just returns a version number backed
+  // by the Gmail webhook. Only when that version changes do we
+  // quietly refresh the inbox in the background, without touching
+  // the loading state, so the UI never flickers.
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkSyncStatus() {
+      try {
+        const response = await fetch("/api/gmail/sync-status", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const version = data.version ?? null;
+
+        if (version === null) return;
+
+        if (lastVersionRef.current === null) {
+          // First check - just record the current version,
+          // don't trigger a refresh.
+          lastVersionRef.current = version;
+          return;
+        }
+
+        if (version !== lastVersionRef.current) {
+          lastVersionRef.current = version;
+
+          // Only auto-refresh the plain inbox view. If the user
+          // currently has a search/filter applied, leave their
+          // results alone rather than silently replacing them.
+          if (!filtersActiveRef.current && !cancelled) {
+            loadInbox({ silent: true });
+          }
+        }
+      } catch (error) {
+        // Silently ignore - this is a background check and
+        // should never interrupt the user.
+        console.error("Sync status check failed:", error);
+      }
+    }
+
+    const interval = setInterval(checkSyncStatus, 5000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   // ---------------------------------------------
@@ -141,6 +220,7 @@ export default function MailPage() {
     const query = buildFilterQuery();
 
     if (!query) {
+      filtersActiveRef.current = false;
       await loadInbox();
       return;
     }
@@ -163,6 +243,7 @@ export default function MailPage() {
       const data = await response.json();
 
       setEmails(data.emails || []);
+      filtersActiveRef.current = true;
     } catch (error) {
       console.error(error);
       setError("Failed to search emails");
@@ -197,6 +278,7 @@ export default function MailPage() {
 
       setEmails(data.emails || []);
       setSearch(query);
+      filtersActiveRef.current = true;
     } catch (error) {
       console.error(error);
       setError("Failed to search emails");
@@ -256,6 +338,8 @@ export default function MailPage() {
     setFromDate("");
     setToDate("");
     setReadStatus("all");
+
+    filtersActiveRef.current = false;
 
     loadInbox();
   }
