@@ -29,6 +29,7 @@ export default function MailPage() {
 
   const [darkMode, setDarkMode] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [mailbox, setMailbox] = useState<"inbox" | "trash">("inbox");
 
   const filtersActiveRef = useRef(false);
   const lastVersionRef = useRef<number | null>(null);
@@ -110,11 +111,46 @@ export default function MailPage() {
   }
 
   // ---------------------------------------------
+  // LOAD TRASH
+  // ---------------------------------------------
+
+  async function loadTrash() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch("/api/gmail/trash", {
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to load trash");
+      }
+
+      const data = await response.json();
+
+      const trashEmails = Array.isArray(data.emails)
+        ? data.emails
+        : Array.isArray(data.messages)
+          ? data.messages
+          : [];
+
+      setEmails(trashEmails);
+    } catch (error) {
+      console.error("Trash load failed:", error);
+      setError("Failed to load trash");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ---------------------------------------------
   // INITIAL LOAD
   // ---------------------------------------------
 
   useEffect(() => {
     if (status === "authenticated") {
+      setMailbox("inbox");
       loadInbox();
     }
   }, [status]);
@@ -161,7 +197,7 @@ export default function MailPage() {
         if (version !== lastVersionRef.current) {
           lastVersionRef.current = version;
 
-          if (!filtersActiveRef.current && !cancelled) {
+          if (!filtersActiveRef.current && !cancelled && mailbox === "inbox") {
             loadInbox({ silent: true });
           }
         }
@@ -176,7 +212,7 @@ export default function MailPage() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [status]);
+  }, [status, mailbox]);
 
   // ---------------------------------------------
   // BUILD GMAIL FILTER QUERY
@@ -347,6 +383,32 @@ export default function MailPage() {
   }
 
   // ---------------------------------------------
+  // MAILBOX NAVIGATION
+  // ---------------------------------------------
+
+  function handleInboxClick() {
+    setMailbox("inbox");
+    filtersActiveRef.current = false;
+    setSearch("");
+    setSender("");
+    setFromDate("");
+    setToDate("");
+    setReadStatus("all");
+    loadInbox();
+  }
+
+  function handleTrashClick() {
+    setMailbox("trash");
+    filtersActiveRef.current = false;
+    setSearch("");
+    setSender("");
+    setFromDate("");
+    setToDate("");
+    setReadStatus("all");
+    loadTrash();
+  }
+
+  // ---------------------------------------------
   // CLEAR FILTERS
   // ---------------------------------------------
 
@@ -466,7 +528,7 @@ export default function MailPage() {
 
         <nav className="space-y-2">
           <button
-            onClick={() => router.push("/mail")}
+            onClick={handleInboxClick}
             className="w-full text-left px-5 py-4 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-lg font-semibold flex items-center gap-3"
           >
             <span className="text-xl">📥</span>
@@ -479,6 +541,18 @@ export default function MailPage() {
           >
             <span className="text-xl">📤</span>
             Sent
+          </button>
+
+          <button
+            onClick={handleTrashClick}
+            className={`w-full text-left px-5 py-4 rounded-2xl text-lg font-semibold transition flex items-center gap-3 ${
+              mailbox === "trash"
+                ? "bg-gray-200 dark:bg-slate-800 text-gray-900 dark:text-white"
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800"
+            }`}
+          >
+            <span className="text-xl">🗑️</span>
+            Trash
           </button>
         </nav>
 
@@ -597,11 +671,13 @@ export default function MailPage() {
               </p>
 
               <h2 className="text-4xl font-bold text-gray-900 dark:text-white">
-                Inbox
+                {mailbox === "trash" ? "Trash" : "Inbox"}
               </h2>
 
               <p className="text-gray-500 dark:text-gray-400 mt-2">
-                Your latest Gmail messages
+                {mailbox === "trash"
+                  ? "Messages currently in your Gmail Trash"
+                  : "Your latest Gmail messages"}
               </p>
             </div>
 
@@ -783,7 +859,9 @@ export default function MailPage() {
               </h3>
 
               <p className="text-gray-500 dark:text-gray-400 mt-2">
-                Try changing your search or clearing the filters.
+                {mailbox === "trash"
+                  ? "Your Gmail Trash is empty."
+                  : "Try changing your search or clearing the filters."}
               </p>
             </div>
           ) : (
