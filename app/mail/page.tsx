@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import AssistantPanel from "@/components/AssistantPanel";
 
 type Email = {
@@ -15,7 +15,7 @@ type Email = {
 
 export default function MailPage() {
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
 
   const [emails, setEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,6 +28,7 @@ export default function MailPage() {
   const [readStatus, setReadStatus] = useState("all");
 
   const [darkMode, setDarkMode] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
   const filtersActiveRef = useRef(false);
   const lastVersionRef = useRef<number | null>(null);
@@ -482,13 +483,90 @@ export default function MailPage() {
         </nav>
 
         <div className="mt-auto border-t border-gray-200 dark:border-slate-800 pt-6">
-          <p className="text-xs uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500 mb-2">
-            Connected account
-          </p>
+          {/* GOOGLE-STYLE ACCOUNT MENU */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setAccountMenuOpen((open) => !open)}
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-slate-800 transition text-left"
+              aria-expanded={accountMenuOpen}
+              aria-label="Open account menu"
+            >
+              {session?.user?.image ? (
+                <img
+                  src={session.user.image}
+                  alt="Profile"
+                  className="w-11 h-11 rounded-full object-cover border border-gray-200 dark:border-slate-700"
+                />
+              ) : (
+                <div className="w-11 h-11 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold shrink-0">
+                  {(session?.user?.name || session?.user?.email || "U").slice(0, 1).toUpperCase()}
+                </div>
+              )}
 
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            Gmail
-          </p>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                  {session?.user?.name || "Google Account"}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {session?.user?.email || "Gmail"}
+                </p>
+              </div>
+
+              <span className="text-gray-400 dark:text-gray-500 text-sm">⋮</span>
+            </button>
+
+            {accountMenuOpen && (
+              <div className="absolute bottom-full left-0 right-0 mb-3 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl overflow-hidden z-50">
+                <div className="px-5 py-5 border-b border-gray-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    {session?.user?.image ? (
+                      <img src={session.user.image} alt="Profile" className="w-12 h-12 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+                        {(session?.user?.name || session?.user?.email || "U").slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-bold text-gray-900 dark:text-white truncate">{session?.user?.name || "Google Account"}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{session?.user?.email || ""}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">Managed by srec.ac.in</p>
+                </div>
+
+                <div className="p-2">
+                  <button
+                    type="button"
+                    onClick={() => signIn("google", { callbackUrl: "/mail", prompt: "select_account" })}
+                    className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 text-sm font-semibold text-gray-800 dark:text-gray-200 transition"
+                  >
+                    + Add another account
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => window.open("https://myaccount.google.com/", "_blank", "noopener,noreferrer")}
+                    className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 text-sm font-semibold text-gray-800 dark:text-gray-200 transition"
+                  >
+                    Manage your Google Account
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                    className="w-full text-left px-4 py-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 text-sm font-semibold text-red-600 dark:text-red-400 transition"
+                  >
+                    Sign out
+                  </button>
+                </div>
+
+                <div className="px-5 py-3 border-t border-gray-200 dark:border-slate-700 flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
+                  <span>Privacy</span><span>•</span><span>Terms of Service</span>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* DARK MODE TOGGLE */}
 
@@ -499,10 +577,7 @@ export default function MailPage() {
             <span className="font-semibold text-gray-700 dark:text-gray-200">
               {darkMode ? "Dark Mode" : "Light Mode"}
             </span>
-
-            <span className="text-xl">
-              {darkMode ? "🌙" : "☀️"}
-            </span>
+            <span className="text-xl">{darkMode ? "🌙" : "☀️"}</span>
           </button>
         </div>
       </aside>
