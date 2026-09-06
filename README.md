@@ -772,6 +772,10 @@ The demonstration covers:
 
 ![Google Account Menu](public/screenshots/08-account-menu.png)
 
+9. Gmail Trash showing messages currently moved to the Gmail Trash mailbox.
+
+![Gmail Trash](public/screenshots/09-trash.png)
+
 Additional demonstrated AI capabilities include:
 
 - Email detail view with current-email context available to the AI Assistant.
