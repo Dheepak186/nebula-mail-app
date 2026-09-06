@@ -25,6 +25,23 @@ export default function EmailDetailPage() {
   const [threadMessages, setThreadMessages] = useState<Email[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [darkMode, setDarkMode] = useState(false);
+
+  // --------------------------------------------------
+  // DARK MODE
+  // --------------------------------------------------
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("nebula-theme");
+
+    if (savedTheme === "dark") {
+      setDarkMode(true);
+      document.documentElement.classList.add("dark");
+    } else {
+      setDarkMode(false);
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
 
   // --------------------------------------------------
   // LOAD EMAIL + THREAD
@@ -36,7 +53,6 @@ export default function EmailDetailPage() {
         setLoading(true);
         setError("");
 
-        // First load the selected message.
         const messageResponse = await fetch(
           `/api/gmail/message/${id}`
         );
@@ -63,10 +79,6 @@ export default function EmailDetailPage() {
 
         setEmail(currentEmail);
 
-        // ------------------------------------------------
-        // Load the complete Gmail thread.
-        // ------------------------------------------------
-
         if (messageData.threadId) {
           const threadResponse = await fetch(
             `/api/gmail/thread/${messageData.threadId}`
@@ -83,7 +95,6 @@ export default function EmailDetailPage() {
 
           setThreadMessages(messages);
         } else {
-          // Fallback if no thread ID is available.
           setThreadMessages([currentEmail]);
         }
       } catch (error) {
@@ -114,11 +125,6 @@ export default function EmailDetailPage() {
     let subject = data.subject || "";
     let body = data.body || "";
 
-    // ------------------------------------------------
-    // FORWARD FIX
-    // Always use the real currently opened email.
-    // ------------------------------------------------
-
     const isForward =
       subject.trim().toLowerCase().startsWith("fwd:");
 
@@ -139,10 +145,6 @@ export default function EmailDetailPage() {
         email.snippet ||
         "(No message)";
     }
-
-    // ------------------------------------------------
-    // Add values to compose URL.
-    // ------------------------------------------------
 
     if (to.trim()) {
       params.set("to", to);
@@ -190,13 +192,13 @@ export default function EmailDetailPage() {
   // --------------------------------------------------
 
   return (
-    <div className="h-screen flex bg-gray-100">
+    <div className="h-screen flex bg-gray-100 dark:bg-slate-950 text-gray-900 dark:text-gray-100 transition-colors duration-200">
 
       {/* =========================================
           MAIN EMAIL / THREAD
       ========================================= */}
 
-      <main className="flex-1 overflow-y-auto p-10">
+      <main className="flex-1 overflow-y-auto p-10 bg-gray-100 dark:bg-slate-950 transition-colors duration-200">
 
         <div className="max-w-5xl mx-auto">
 
@@ -204,7 +206,7 @@ export default function EmailDetailPage() {
 
           <button
             onClick={() => router.push("/mail")}
-            className="border border-gray-300 bg-white px-5 py-3 rounded-xl font-semibold hover:bg-gray-100 mb-8"
+            className="border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-200 px-5 py-3 rounded-xl font-semibold hover:bg-gray-100 dark:hover:bg-slate-800 mb-8 transition"
           >
             ← Back to Inbox
           </button>
@@ -215,22 +217,22 @@ export default function EmailDetailPage() {
 
           {loading ? (
 
-            <div className="bg-white rounded-2xl p-8">
-              <p className="text-gray-500 text-lg">
+            <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-8 transition">
+              <p className="text-gray-500 dark:text-gray-400 text-lg">
                 Loading email thread...
               </p>
             </div>
 
           ) : error ? (
 
-            <div className="bg-red-100 text-red-700 rounded-xl p-5">
+            <div className="bg-red-100 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 rounded-xl p-5">
               {error}
             </div>
 
           ) : !email ? (
 
-            <div className="bg-white rounded-2xl p-8">
-              <p className="text-gray-500">
+            <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-8">
+              <p className="text-gray-500 dark:text-gray-400">
                 Email not found.
               </p>
             </div>
@@ -243,13 +245,13 @@ export default function EmailDetailPage() {
                   THREAD HEADER
               ================================= */}
 
-              <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm mb-6">
+              <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-8 shadow-sm mb-6 transition">
 
-                <h1 className="text-3xl font-bold">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                   {email.subject || "(No subject)"}
                 </h1>
 
-                <p className="text-gray-500 mt-2">
+                <p className="text-gray-500 dark:text-gray-400 mt-2">
                   {threadMessages.length}{" "}
                   {threadMessages.length === 1
                     ? "message"
@@ -273,32 +275,32 @@ export default function EmailDetailPage() {
                         message.id ||
                         `${message.date}-${index}`
                       }
-                      className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm"
+                      className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-8 shadow-sm transition"
                     >
 
                       {/* MESSAGE HEADER */}
 
                       <div className="mb-6">
 
-                        <h2 className="text-xl font-bold mb-4">
+                        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
                           {message.subject ||
                             "(No subject)"}
                         </h2>
 
-                        <div className="space-y-2 text-gray-700">
+                        <div className="space-y-2 text-gray-700 dark:text-gray-300">
 
                           <p>
-                            <strong>From:</strong>{" "}
+                            <strong className="text-gray-900 dark:text-white">From:</strong>{" "}
                             {message.from}
                           </p>
 
                           <p>
-                            <strong>To:</strong>{" "}
+                            <strong className="text-gray-900 dark:text-white">To:</strong>{" "}
                             {message.to}
                           </p>
 
                           <p>
-                            <strong>Date:</strong>{" "}
+                            <strong className="text-gray-900 dark:text-white">Date:</strong>{" "}
                             {message.date}
                           </p>
 
@@ -306,17 +308,17 @@ export default function EmailDetailPage() {
 
                       </div>
 
-                      <hr className="border-gray-300 mb-6" />
+                      <hr className="border-gray-300 dark:border-slate-700 mb-6" />
 
                       {/* MESSAGE BODY */}
 
                       <div>
 
-                        <h3 className="text-lg font-bold mb-4">
+                        <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">
                           Message
                         </h3>
 
-                        <div className="text-lg text-gray-800 whitespace-pre-wrap leading-8">
+                        <div className="text-lg text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-8">
                           {message.body ||
                             message.snippet ||
                             "(No message)"}
