@@ -768,6 +768,10 @@ The demonstration covers:
 
 ![Nebula Mail Dark Mode](public/screenshots/07-dark-mode.png)
 
+8. Google Account Menu showing the connected account, account switching, Google Account management, and sign-out options.
+
+![Google Account Menu](public/screenshots/08-account-menu.png)
+
 Additional demonstrated AI capabilities include:
 
 - Email detail view with current-email context available to the AI Assistant.
